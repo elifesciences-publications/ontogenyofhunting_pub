@@ -316,6 +316,8 @@ plot(density(sapply(tail(draw_LF$mu[,1,,],stail),mean)),col=colourLegL[2] ,lwd=2
 lines(density(sapply(tail(draw_NF$mu[,1,,],stail),mean)),col=colourLegL[3] ,lwd=2) ##Mean Group Undershoot From Mean Of Each Larva
 lines(density(sapply(tail(draw_DF$mu[,1,,],stail) ,mean)),col=colourLegL[1] ,lwd=2) ##Mean Group Undershoot From Mean Of Each Larva
 
+
+
 ##"Covariance in 3D statistical model for Capture Strike speed / Undershoot Ratio / Distance to Prey"
   Ci <- 2
   Cj <- 3

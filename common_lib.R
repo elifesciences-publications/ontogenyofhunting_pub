@@ -54,7 +54,7 @@ las <- 1
 ###  NF, LF, DF , Black Colouring 
 
 colourLegE <- c("#FB9A99C8","#B2DF8AC8","#A6CEE3C8","#FDBF6F23") 
-colourLegL <- c("#E31A1C23", "#33A02C23", "#1F78B423", "#FF7F0023") 
+colourLegL <- c("#E31A1CD3", "#33A02CD3", "#1F78B4D3", "#FF7F00D3") 
 colourL    <-c("#03B303AF","#E60303AF","#0303E6AF")
 
 pchL <- c(1,2,0,17,15,16,4) ## The style of bullet used for each group DL, LL, NL
@@ -62,5 +62,5 @@ lineTypeL <- c(2,1,3,4) ## The style of bullet used for each group DL, LL, NL
 
 ## Condition Labels
 strDataLabels <- expression("NF-s","LF-s","DF-s","NF-e","LF-e","DF-e" )
-
+strGroupID <- c("DL","LL","NL") 
 ## GLOBAL VARS ###
