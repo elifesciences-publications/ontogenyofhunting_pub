@@ -1,21 +1,13 @@
 ### Kostas Lagogiannis 2019-04-17 
-## Discovered relationship between the last bout speed - ie Capture speed and the undershoot ratio -
-## higher undershoot predicts higher capture speeds, while undershoot also seems to predict higher distance from prey 
-##  suggesting that LF stays further away from prey, so it does stronger capture bouts and it is undershoot that allows it to do it.
-## Their ability to judge distance is also revealed in the the eye vergence prior to capture, where there is a relationship between EyeV and distance to prey   is shown 
-## Stohoi:
-## S1 Establish whether undershoot covaries with capture speed
-## S2 Compare cap.Speed vs UNdershoot models between groups - Do they also covary in all groups?
-## S3 compare accuracy of capture speed vs distance to prey between groups (use covariance distributions)
-## Aitiology :
-## 
-## A: Does undershoot explain capture speed and distance to prey accuracy?
+## This Model Clusters Capture speeds between fast and slow, based on Speed & Distance
+## Discovered relationship between the last bout speed - ie Capture speed and the distance to prey
+
 
 ### Stat Model on Capture speed vs undershoot
 library(rjags)
 library(runjags)
 
-source("config_lib.R")
+source("common_lib.R")
 source("DataLabelling/labelHuntEvents_lib.r") ##for convertToScoreLabel
 source("TrackerDataFilesImport_lib.r")
 ### Hunting Episode Analysis ####
@@ -112,64 +104,36 @@ plotCaptureSpeedFit <- function(datSpeed,drawMCMC,colourIdx,nchain = 1)
 }
 
 
-
-
-strMainPDFFilename <- "/stat/UndershootAnalysis/fig4_stat_modelMixCaptureSpeedVsDistToPrey.pdf"; ## Used Fig 4
-strModelVarPDFFilename <- "/stat/UndershootAnalysis/stat_modelMixCaptureSpeedVsDistToPrey_Variances.pdf";
-strModelCoVarPDFFilename <- "/stat/UndershootAnalysis/fig4S1_stat_modelMixCaptureSpeedVsDistToPrey_COVariances.pdf";
-strDataPDFFileName <- "/stat/UndershootAnalysis/fig4S2_PreyDistanceCaptureSpeed_scatterValid.pdf"
-strClusterOccupancyPDFFileName <- "/stat/UndershootAnalysis/stat_modelCaptureStrike_ClusterOccupancy.pdf"
-
-strCaptSpeedDensityPDFFileName <- "/stat/UndershootAnalysis/fig4_stat_modelMixCaptureSpeed_Valid.pdf" ## Used in Fig 4
-
-datTrackedEventsRegister <- readRDS( paste(strDataExportDir,"/setn_huntEventsTrackAnalysis_Register_ToValidate.rds",sep="") ) ## THis is the Processed Register File On 
-#lMotionBoutDat <- readRDS(paste(strDataExportDir,"/huntEpisodeAnalysis_MotionBoutData_SetC.rds",sep="") ) #Processed Registry on which we add )
-#lEyeMotionDat <- readRDS(file=paste(strDataExportDir,"/huntEpisodeAnalysis_EyeMotionData_SetC",".rds",sep="")) #
-lFirstBoutPoints <-readRDS(file=paste(strDataExportDir,"//huntEpisodeAnalysis_FirstBoutData_wCapFrame_Validated",".rds",sep="")) 
-
-### Capture Speed vs Distance to prey ###
-datDistanceVsStrikeSpeed_NL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$NL[,"DistanceToPrey"],CaptureSpeed=lFirstBoutPoints$NL[,"CaptureSpeed"],RegistarIdx=lFirstBoutPoints$NL[,"RegistarIdx"],Validated= lFirstBoutPoints$NL[,"Validated"],CaptureDuration= (lFirstBoutPoints$NL[,"CaptureBoutEndFrame"]-lFirstBoutPoints$NL[,"CaptureBoutStartFrame"])/G_APPROXFPS ) )
-datDistanceVsStrikeSpeed_LL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$LL[,"DistanceToPrey"],CaptureSpeed=lFirstBoutPoints$LL[,"CaptureSpeed"]),RegistarIdx=lFirstBoutPoints$LL[,"RegistarIdx"],Validated= lFirstBoutPoints$LL[,"Validated"],CaptureDuration= (lFirstBoutPoints$LL[,"CaptureBoutEndFrame"]-lFirstBoutPoints$LL[,"CaptureBoutStartFrame"])/G_APPROXFPS  )
-datDistanceVsStrikeSpeed_DL <- data.frame( cbind(DistanceToPrey=lFirstBoutPoints$DL[,"DistanceToPrey"],CaptureSpeed=lFirstBoutPoints$DL[,"CaptureSpeed"]),RegistarIdx=lFirstBoutPoints$DL[,"RegistarIdx"],Validated= lFirstBoutPoints$DL[,"Validated"],CaptureDuration= (lFirstBoutPoints$DL[,"CaptureBoutEndFrame"]-lFirstBoutPoints$DL[,"CaptureBoutStartFrame"])/G_APPROXFPS  )
-
-###Subset Validated Only
-
-###Validated Only
-replace(datDistanceVsStrikeSpeed_NL$Validated, is.na(datDistanceVsStrikeSpeed_NL$Validated), 0)
-replace(datDistanceVsStrikeSpeed_LL$Validated, is.na(datDistanceVsStrikeSpeed_LL$Validated), 0)
-replace(datDistanceVsStrikeSpeed_DL$Validated, is.na(datDistanceVsStrikeSpeed_DL$Validated), 0) 
-
-datDistanceVsStrikeSpeed_NL <- datDistanceVsStrikeSpeed_NL[datDistanceVsStrikeSpeed_NL$Validated == 1, ]
-datDistanceVsStrikeSpeed_LL <- datDistanceVsStrikeSpeed_LL[datDistanceVsStrikeSpeed_LL$Validated == 1, ]
-datDistanceVsStrikeSpeed_DL <- datDistanceVsStrikeSpeed_DL[datDistanceVsStrikeSpeed_DL$Validated == 1, ]
-
-datDistanceVsStrikeSpeed_ALL <- rbind(datDistanceVsStrikeSpeed_NL,datDistanceVsStrikeSpeed_LL,datDistanceVsStrikeSpeed_DL)
-##
 ##  Init  datastruct that we pass to model ##
 ##For Random allocation to model use: rbinom(n=10, size=1, prob=0.5)
 steps <- 5500 #105500
-str_vars <- c("mu","rho","sigma","cov","x_rand","mID","mStrikeCount","pS","RegistarIdx")
-ldata_LF <- list(c=datDistanceVsStrikeSpeed_LL,N=NROW(datDistanceVsStrikeSpeed_LL)) ##Live fed
-ldata_NF <- list(c=datDistanceVsStrikeSpeed_NL,N=NROW(datDistanceVsStrikeSpeed_NL)) ##Not fed
-ldata_DF <- list(c=datDistanceVsStrikeSpeed_DL,N=NROW(datDistanceVsStrikeSpeed_DL)) ##Dry fed
-ldata_ALL <- list(c=datDistanceVsStrikeSpeed_ALL,N=NROW(datDistanceVsStrikeSpeed_ALL)) ##Dry fed
+str_vars <- c("mu","rho","sigma","cov","x_rand","mID","mStrikeCount","pS")
 
-
+ldata_LF <- readRDS(file=paste0(strDataExportDir,"pubDat/huntEpisodeDataMergedWithLarvalSuccess_LF.rds") )
+ldata_NF <- readRDS(file=paste0(strDataExportDir,"pubDat/huntEpisodeDataMergedWithLarvalSuccess_NF.rds") )
+ldata_DF <-  readRDS(file=paste0(strDataExportDir,"pubDat/huntEpisodeDataMergedWithLarvalSuccess_DF.rds") )
+##Convert To convinient format for selecting Columns
+distVsSpeed_LF <- data.frame(unlist(ldata_LF$c))
+distVsSpeed_NF <- data.frame(unlist(ldata_NF$c))
+distVsSpeed_DF <- data.frame(unlist(ldata_DF$c))
 
 ### RUN MODEL ###
-jags_model_LF <- jags.model(textConnection(strmodel_capspeedVsDistance), data = ldata_LF, 
+jags_model_LF <- jags.model(textConnection(strmodel_capspeedVsDistance),
+                            data = cbind(dist=distVsSpeed_LF$DistanceToPrey,speed=distVsSpeed_LF$CaptureSpeed), 
                             n.adapt = 500, n.chains = 3, quiet = F)
 update(jags_model_LF, 500)
 draw_LF=jags.samples(jags_model_LF,steps,thin=2,variable.names=str_vars)
 
 ## Not Fed
-jags_model_NF <- jags.model(textConnection(strmodel_capspeedVsDistance), data = ldata_NF, 
+jags_model_NF <- jags.model(textConnection(strmodel_capspeedVsDistance), 
+                            data = cbind(dist=distVsSpeed_NF$DistanceToPrey,speed=distVsSpeed_NF$CaptureSpeed), 
                             n.adapt = 500, n.chains = 3, quiet = F)
 update(jags_model_NF)
 draw_NF=jags.samples(jags_model_NF,steps,thin=2,variable.names=str_vars)
 
 ##  DRY  Fed
-jags_model_DF <- jags.model(textConnection(strmodel_capspeedVsDistance), data = ldata_DF, 
+jags_model_DF <- jags.model(textConnection(strmodel_capspeedVsDistance), 
+                            data = cbind(dist=distVsSpeed_DF$DistanceToPrey,speed=distVsSpeed_DF$CaptureSpeed), 
                             n.adapt = 500, n.chains = 3, quiet = F)
 update(jags_model_DF, 500)
 draw_DF=jags.samples(jags_model_DF,steps,thin=2,variable.names=str_vars)
@@ -184,15 +148,28 @@ save(draw_LF,draw_NF,draw_DF,file =paste(strDataExportDir,"stat_CaptSpeedVsDista
 
 
 
+  p_NF = ggplot( datCapture_NL, aes(DistanceToPrey, CaptureSpeed,color =Cluster,fill=Cluster))  +
+    ggtitle(NULL) +
+    theme(axis.title =  element_text(family="Helvetica",face="bold", size=16),
+          axis.text = element_text(family="Helvetica",face="bold", size=16),
+          plot.margin = unit(c(1,1,1,1), "mm"), legend.position = "none") +
+    fill_palette("jco")
+  
+  p_NF = p_NF + geom_point( size = 3, alpha = 0.6,aes(color =datCapture_NL$Cluster) ) +  xlim(0, 0.8) +  ylim(0, 80) +
+    scale_color_manual( values = c("#00AFBB", "#E7B800", "#FC4E07") )
+  
+  contour_fast <- getFastClusterGrid(draw_NF) ## Draw the mvtnorm model fit contour
+  contour_slow <- getSlowClusterGrid(draw_NF)
+  p_NF = p_NF +
+    geom_contour(contour_fast, mapping = aes(x = DistanceToPrey, y = CaptureSpeed, z = Density) ,linetype=2 ) +
+    geom_contour(contour_slow, mapping = aes(x = DistanceToPrey, y = CaptureSpeed, z = Density) ,linetype=2 ) +
+    scale_x_continuous(name="Distance to prey (mm)", limits=c(0, 0.8)) +
+    scale_y_continuous(name="Capture Speed (mm/sec)", limits=c(0, 80)) 
+  #theme_linedraw()
+  
+  ggMarginal(p_NF, x="DistanceToPrey",y="CaptureSpeed", type = "density",groupColour = TRUE,groupFill=TRUE,show.legend=FALSE) 
+  
 
-
-
-### Load Pre Calc Results
-load(file =paste(strDataExportDir,"stat_CaptSpeedVsDistance_RJags.RData",sep=""))
-#### Main Figure 4 - Show Distance Vs Capture speed clusters for all groups - and Prob Of Capture Strike###
-
-## Load COvariance (dLLb_rhoSD) - Calculated by 3D model in stat_CaptureSpeedVsUndershootAndDistance ##
-load(file = paste0(strDataExportDir,"stat_CaptSpeedVsDistance_Covariance_RJags.RData"))
 
 
 #######################################################

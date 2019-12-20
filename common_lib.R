@@ -56,6 +56,7 @@ las <- 1
 colourLegE <- c("#FB9A99C8","#B2DF8AC8","#A6CEE3C8","#FDBF6F23") 
 colourLegL <- c("#E31A1CD3", "#33A02CD3", "#1F78B4D3", "#FF7F00D3") 
 colourL    <-c("#03B303AF","#E60303AF","#0303E6AF")
+colourHPoint <- c("#E31A1C37","#33A02C37","#1F78B437","#FB9A9937","#B2DF8A37","#A6CEE337","#FDBF6F37")
 
 pchL <- c(1,2,0,17,15,16,4) ## The style of bullet used for each group DL, LL, NL
 lineTypeL <- c(2,1,3,4) ## The style of bullet used for each group DL, LL, NL
