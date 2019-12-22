@@ -1,6 +1,6 @@
 ## Ontogeny of Hunting in Larval Zebrafish  
-Konstantinos Lagogiannis 2019
-Analysis code used for statistical inference of behaviour.
+Konstantinos Lagogiannis 2019  
+Analysis code used for statistical inference of behaviour.  
 
 [BioArxiv Pre-Print Available](https://www.biorxiv.org/content/10.1101/2019.12.19.883157v1.article-metrics "BioArxiv Pre-Print available")
 
