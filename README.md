@@ -8,7 +8,9 @@ Analysis code used for statistical inference of behaviour.
 *Note*: This code repository is still under  development.
 It will contain the example code and data showing how models of behaviour were analysed in the article "Learning steers the ontogeny of an efficient hunting sequence in zebrafish larva."
 
-> - stat_3DLarvaGroupBeahviour.r
-> > - Hierarchical model of group hunting behaviour 
->- stat_FishDev-Length.r
-> - Gaussian models used for comparing larval lengths between rearing groups.
+- stat_3DLarvaGroupBehaviour.r
+  * Hierarchical model of group hunting behaviour 
+- stat_FishDev-Length.r
+  * Gaussian models used for comparing larval lengths between rearing groups.
+  
+  
