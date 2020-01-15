@@ -59,6 +59,11 @@ colourL    <-c("#03B303AF","#E60303AF","#0303E6AF")
 colourHPoint <- c("#E31A1C37","#33A02C37","#1F78B437","#FB9A9937","#B2DF8A37","#A6CEE337","#FDBF6F37")
 colourHLine <- colourLegL
 
+colourH <- c("#0303E663","#03B30363","#E6030363")
+colourD <- c("#0303E623","#03B30323","#E6030323")
+colourL <- c("#0303E6AF","#03B303AF","#E60303AF")
+
+
 pchL <- c(1,2,0,17,15,16,4) ## The style of bullet used for each group DL, LL, NL
 lineTypeL <- c(2,1,3,4) ## The style of bullet used for each group DL, LL, NL
 
@@ -203,4 +208,173 @@ plotClusteredData <- function(distVsSpeed_F,draw_F)
 }  
 
 ################################
+
+
+## Analysis of Hunt Success 
+### Makes Data frame With Number of Success Vs Failures From Labelled DatHuntEvent
+getHuntSuccessPerFish <- function(datHuntLabelledEvents)
+{
+  #datHuntLabelledEvents <- datHuntLabelledEvents[datHuntLabelledEvents$eventID != 0,] ##Exclude the Artificial Event 0 Used such that all ExpID are In the DatHuntEvent
+  tblResSB <- table(convertToScoreLabel(datHuntLabelledEvents$huntScore),datHuntLabelledEvents$groupID)
+  tblFishScores <- table(datHuntLabelledEvents$expID, convertToScoreLabel(datHuntLabelledEvents$huntScore) )
+  
+  tblFishScoresLabelled<- tblFishScores[tblFishScores[,1] < 2, ] ##Pick Only THose ExpId (Fish) Whose Labelling Has (almost!) Finished
+  ##Choose The Columns With the Scores Of Interest Success 3, Success-SpitBackOut 12 etc
+  ##No_Targer is Column 5
+  
+  
+  ## Find Tbl Indexes Indicating Success 
+  tblIdxSuccess <- which (grepl("Success",row.names(tblResSB) ) ) 
+  tblIdxFail <- which (grepl("Fail",row.names(tblResSB) ) ) 
+  
+  tblIdxNotHuntMode <- which (grepl("Out_Of_Range",row.names(tblResSB) ) | 
+                                grepl("UnLabelled",row.names(tblResSB) ) | 
+                                grepl("Duplicate",row.names(tblResSB) ) | 
+                                grepl("Near-Hunt State",row.names(tblResSB) ) )  
+  
+  tblIdxEscape <- which (grepl("Escape",row.names(tblResSB) ) ) 
+  tblIdxFail <- which (grepl("Fail",row.names(tblResSB) ) ) 
+  
+  
+  
+  datFishSuccessRate <- data.frame( cbind("Success" = rowSums(tblFishScoresLabelled[,tblIdxSuccess]),#tblFishScoresLabelled[,"Success"]+tblFishScoresLabelled[,"Success-SpitBackOut"]+tblFishScoresLabelled[,"Success-OnStrike"]+tblFishScoresLabelled[,"Success-OnStrike-SpitBackOut"]+tblFishScoresLabelled[,"Success-OnApproach"] +tblFishScoresLabelled[,"Success-OnApproach-AfterStrike"],
+                                          "Fails_NS"= tblFishScoresLabelled[,"Fail-No Strike"],
+                                          "Fails_WS"=tblFishScoresLabelled[,"Fail-With Strike"],
+                                          "Fails"= rowSums(tblFishScoresLabelled[,tblIdxFail]),  #tblFishScoresLabelled[,"Fail"]+tblFishScoresLabelled[,"Fail-No Strike"]+tblFishScoresLabelled[,"Fail-With Strike"],
+                                          "HuntEvents"=rowSums(tblFishScoresLabelled[, !(1:NCOL(tblFishScoresLabelled) %in% tblIdxNotHuntMode) ] ),  #rowSums(tblFishScoresLabelled[,c("Success","Success-SpitBackOut","Success-OnStrike","Success-OnStrike-SpitBackOut","Success-OnApproach","Success-OnApproach-AfterStrike","Fail","Fail-No Strike","Fail-With Strike","No_Target")]) , ##Ad The No Target To indicate Triggering Of Hunt Mode (Col 5)
+                                          "CaptureEvents"=rowSums(tblFishScoresLabelled[,c(tblIdxSuccess,tblIdxFail)] ),  #rowSums(tblFishScoresLabelled[,c("Success","Success-SpitBackOut","Success-OnStrike","Success-OnStrike-SpitBackOut","Success-OnApproach","Success-OnApproach-AfterStrike","Fail","Fail-No Strike","Fail-With Strike","No_Target")]) , ##Ad The No Target To indicate Triggering Of Hunt Mode (Col 5)
+                                          "expID"=NA,
+                                          "groupID"=NA,
+                                          "dataSetID"=NA) ) #
+  
+  vScoreIdx        <- ((datFishSuccessRate[,"Success"]*datFishSuccessRate[,"Success"])/(datFishSuccessRate[,"Success"]+datFishSuccessRate[,"Fails"]))
+  vEfficiency      <- ((datFishSuccessRate[,"Success"])/(datFishSuccessRate[,"Success"]+datFishSuccessRate[,"Fails"]))  
+  datFishSuccessRate <- cbind(datFishSuccessRate,HuntPower=vScoreIdx,Efficiency=vEfficiency)
+  ##Add Group Label To the resulting Data Frame
+  for (e in row.names(tblFishScoresLabelled) )
+  {
+    datFishSuccessRate[e,"expID"] <- unique( datHuntLabelledEvents[!is.na(datHuntLabelledEvents$expID) & datHuntLabelledEvents$expID == e,"expID"] )
+    datFishSuccessRate[e,"groupID"] <- unique( datHuntLabelledEvents[!is.na(datHuntLabelledEvents$expID) & datHuntLabelledEvents$expID == e,"groupID"] )
+    datFishSuccessRate[e,"dataSetID"] <- unique( datHuntLabelledEvents[!is.na(datHuntLabelledEvents$expID) & datHuntLabelledEvents$expID == e,"dataSetID"] )
+  }
+  
+  return (datFishSuccessRate)
+  
+}
+
+
+### Hunt outcome Labelling/Scorring convertion Functions
+vHuntEventLabels <- c("UnLabelled","NA","Success","Fail","No_Target","Not_HuntMode/Delete","Escape","Out_Of_Range","Duplicate/Overlapping","Fail-No Strike","Fail-With Strike",
+                      "Success-SpitBackOut",
+                      "Debri-Triggered","Near-Hunt State","Success-OnStrike","Success-OnStrike-SpitBackOut",
+                      "Success-OnApproach", ##For Ones that either do not strike but simply push on to the prey, 
+                      "Success-OnApproach-AfterStrike" #or those that strike but only capture prey after and not during the strike (Denotes lesser ability to judge distance)
+)
+
+convertToScoreLabel <- function (huntScore) { 
+  return (factor(x=huntScore,levels=seq(0,NROW(vHuntEventLabels)-1),labels=vHuntEventLabels ) )
+}
+
+####
+
+## The figure with CDF of hunt efficiency - plotted as power, so as to show differences in actual consumption 
+## instead of just ratio of success vs fail
+plotHuntPowerDataCDF <- function(datHuntEventAllGroupToLabel)
+{
+  datFishSuccessRate <- getHuntSuccessPerFish(datHuntEventAllGroupToLabel)
+  ## Hunt POwer ##
+  vScoreIdx        <- datFishSuccessRate[,"HuntPower"] # ((datFishSuccessRate[,"Success"]*datFishSuccessRate[,"Success"])/(datFishSuccessRate[,"Success"]+datFishSuccessRate[,"Fails"]))
+  vEfficiencyRatio <- (datFishSuccessRate[,"Success"]/(datFishSuccessRate[,"Success"]+datFishSuccessRate[,"Fails"]))
+  vEfficiencyRatio_Strike <- (datFishSuccessRate[,"Success"]/(datFishSuccessRate[,"Success"]+datFishSuccessRate[,"Fails_WS"]))
+  vEfficiencyRatio_NStrike <- (datFishSuccessRate[,"Success"]/(datFishSuccessRate[,"Success"]+datFishSuccessRate[,"Fails_NS"]))
+  #vScoreIdx[is.nan(vScoreIdx) ] <- 0
+  tblEventsTracked <- table(datHuntEventAllGroupToLabel$expID, datHuntEventAllGroupToLabel$markTracked,useNA="always" )
+  datFishSuccessRateMerged <- cbind(datFishSuccessRate,
+                                    markUnTrackable=data.frame(tblEventsTracked[row.names(datFishSuccessRate),1]),
+                                    markTracked=data.frame(tblEventsTracked[row.names(datFishSuccessRate),2]),
+                                    notTracked=data.frame(tblEventsTracked[row.names(datFishSuccessRate),3]))
+  
+  datFishSuccessRateMerged <- cbind(datFishSuccessRateMerged,vScoreIdx,vEfficiencyRatio,vEfficiencyRatio_Strike,vEfficiencyRatio_NStrike)
+  
+  
+  
+  ## Subset only the active/Larvae - ones that have hunted 
+  datFishSuccessRateActive <- datFishSuccessRateMerged[!is.nan(datFishSuccessRateMerged$vScoreIdx),]
+  
+  ## Plot Density of Hunting POWER S^2/(S+F)
+  densDLScore <- density(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "DL",]$vScoreIdx)
+  densNLScore <- density(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "NL",]$vScoreIdx)
+  densLLScore <- density(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "LL",]$vScoreIdx)
+  
+  cdfDLScore <- ecdf(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "DL",]$vScoreIdx)
+  cdfNLScore <- ecdf(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "NL",]$vScoreIdx)
+  cdfLLScore <- ecdf(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "LL",]$vScoreIdx)
+  
+  
+  #par(mar = c(3.9,4.3,1,1)) 
+  plot(cdfNLScore,lty=2,lwd=3,col=colourLegL [1],xlim=c(0,12),pch=pchL[1],ylim=c(0.03,1.01),
+       main=NA,ylab=NA,  xlab=NA,cex.main =cex,cex.axis=cex,cex=cex )
+  
+  plot(cdfLLScore,add=T,lty=1,lwd=3,col=colourLegL[2],pch=pchL[2],ylim=c(0,1.01),cex=cex)
+  plot(cdfDLScore,add=T,lty=1,lwd=3,col=colourLegL[3],pch=pchL[3],ylim=c(0,1.01),cex=cex)
+  #axis(side=1)
+  mtext(side = 1,cex=cex, line = line, expression( "Hunt power " ~ N[S]^2/(N[S]+N[F]) ,paste("") )   )
+  mtext(side = 2,cex=cex, line = line, expression("Cumulative function " ))
+  
+  legend("bottomright",legend=paste(c("NL #","LL #","DL #"),c(densNLScore$n,densLLScore$n,densDLScore$n) ),
+         col = colourLegL,pch=pchL,cex=cex+0.2)
+}
+
+
+
+
+## The figure with CDF of hunt efficiency - plotted as power, so as to show differences in actual consumption 
+## instead of just ratio of success vs fail
+plotHuntEfficiencyDataCDF <- function(datHuntEventAllGroupToLabel,showLegend=FALSE)
+{
+  datFishSuccessRate <- getHuntSuccessPerFish(datHuntEventAllGroupToLabel)
+  vScoreIdx        <- ((datFishSuccessRate[,"Success"]*datFishSuccessRate[,"Success"])/(datFishSuccessRate[,"Success"]+datFishSuccessRate[,"Fails"]))
+  vEfficiencyRatio <- (datFishSuccessRate[,"Success"]/(datFishSuccessRate[,"Success"]+datFishSuccessRate[,"Fails"]))
+  vEfficiencyRatio_Strike <- (datFishSuccessRate[,"Success"]/(datFishSuccessRate[,"Success"]+datFishSuccessRate[,"Fails_WS"]))
+  vEfficiencyRatio_NStrike <- (datFishSuccessRate[,"Success"]/(datFishSuccessRate[,"Success"]+datFishSuccessRate[,"Fails_NS"]))
+  #vScoreIdx[is.nan(vScoreIdx) ] <- 0
+  tblEventsTracked <- table(datHuntEventAllGroupToLabel$expID, datHuntEventAllGroupToLabel$markTracked,useNA="always" )
+  datFishSuccessRateMerged <- cbind(datFishSuccessRate,
+                                    markUnTrackable=data.frame(tblEventsTracked[row.names(datFishSuccessRate),1]),
+                                    markTracked=data.frame(tblEventsTracked[row.names(datFishSuccessRate),2]),
+                                    notTracked=data.frame(tblEventsTracked[row.names(datFishSuccessRate),3]))
+  
+  datFishSuccessRateMerged <- cbind(datFishSuccessRateMerged,vScoreIdx,vEfficiencyRatio,vEfficiencyRatio_Strike,vEfficiencyRatio_NStrike)
+  
+  
+  
+  ## Subset only the active/Larvae - ones that have hunted 
+  datFishSuccessRateActive <- datFishSuccessRateMerged[!is.nan(datFishSuccessRateMerged$vEfficiencyRatio),]
+  
+  ## Plot Density of Hunting POWER S^2/(S+F)
+  densDLScore <- density(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "DL",]$vEfficiencyRatio)
+  densNLScore <- density(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "NL",]$vEfficiencyRatio)
+  densLLScore <- density(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "LL",]$vEfficiencyRatio)
+  
+  cdfDLScore <- ecdf(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "DL",]$vEfficiencyRatio)
+  cdfNLScore <- ecdf(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "NL",]$vEfficiencyRatio)
+  cdfLLScore <- ecdf(datFishSuccessRateActive[datFishSuccessRateActive$groupID == "LL",]$vEfficiencyRatio)
+  
+  
+  #par(mar = c(3.9,4.3,1,1)) 
+  plot(cdfNLScore,lty=2,lwd=3,col=colourLegL [1],xlim=c(0,1),pch=pchL[1],ylim=c(0.03,1.01),
+       main=NA,ylab=NA,  xlab=NA,cex.main =cex,cex.axis=cex,cex=cex )
+  
+  plot(cdfLLScore,add=T,lty=1,lwd=3,col=colourLegL[2],pch=pchL[2],ylim=c(0,1.01),cex=cex)
+  plot(cdfDLScore,add=T,lty=1,lwd=3,col=colourLegL[3],pch=pchL[3],ylim=c(0,1.01),cex=cex)
+  #axis(side=1)
+  mtext(side = 1,cex=cex, line = line, expression( "Capture Efficiency  "  ,paste("") )   )
+  mtext(side = 2,cex=cex, line = line, expression("Cumulative function " ))
+  if (showLegend) 
+  {
+    legend("bottomright",legend=paste(c("NL #","LL #","DL #"),c(densNLScore$n,densLLScore$n,densDLScore$n) ),
+           col = colourLegL,pch=pchL,cex=cex+0.2)
+  }
+}
+
 
