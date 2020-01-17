@@ -4,7 +4,7 @@ Example analysis code used to replicate statistical inference on zebrafish behav
 [BioArxiv Pre-Print Available](https://www.biorxiv.org/content/10.1101/2019.12.19.883157v2 "BioArxiv Pre-Print available")
 
 *Note*: This code repository may change in response to feedback.
-The following files contain example code and data replicating the analysis of behaviour in the article *"Learning steers the ontogeny of an efficient hunting sequence in zebrafish larva."* , by K. Lagogiannis, G. Diana and M. P Meyer, of King's College London.
+The following files contain example code in [R](https://www.r-project.org/ "R, *free* software environment for statistical computing and graphics"), along with the data replicating the analysis of zebrafish behaviour in the article *"Learning steers the ontogeny of an efficient hunting sequence in zebrafish larva."* , by K. Lagogiannis, G. Diana and M. P Meyer, of King's College London.
 
 - stat_3DLarvaGroupBehaviour.r
   * Hierarchical model of revealing the typical hunting behaviour of each rearing group. 
