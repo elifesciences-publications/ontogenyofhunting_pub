@@ -24,10 +24,10 @@ modelNorm="model {
 
 ################### LOAD CSV OF PX Larva lengths ################
 message(paste(" Loading Measured fish length in pixels data ... "))
-datFlatPxLength <- read.csv(file= paste0("dat/FishLength_Updated2.csv"))
+datFlatPxLength <- read.csv(file= paste0("dat/FishSTDFengths_ALFGroups.csv"))
 
 
-
+strGroupID = levels(datFlatPxLength$groupID)
 
 Jagsdata=list(groupID=datFlatPxLength$groupID,
               LarvaLength=datFlatPxLength$LengthPx*DIM_MMPERPX, 
@@ -50,13 +50,13 @@ update(sizemodel,burn_in)
 draw=jags.samples(sizemodel,steps,thin=thin,variable.names=varnames1)
 
 ##
-dmodelSizeNF <- density(draw$mu[which(strGroupID == "NL"),,],bw=0.1)
-dmodelSizeLF <- density(draw$mu[which(strGroupID == "LL"),,],bw=0.1)
-dmodelSizeDF <- density(draw$mu[which(strGroupID == "DL"),,],bw=0.1)
+dmodelSizeNF <- density(draw$mu[which(strGroupID == "NF"),,],bw=0.1)
+dmodelSizeLF <- density(draw$mu[which(strGroupID == "LF"),,],bw=0.1)
+dmodelSizeDF <- density(draw$mu[which(strGroupID == "DF"),,],bw=0.1)
 
-dSizeNF <- density(datFlatPxLength[datFlatPxLength$groupID == which(strGroupID == "NL"),]$LengthPx*DIM_MMPERPX,bw=0.1)
-dSizeLF <- density(datFlatPxLength[datFlatPxLength$groupID == which(strGroupID == "LL"),]$LengthPx*DIM_MMPERPX,bw=0.1)
-dSizeDF <- density(datFlatPxLength[datFlatPxLength$groupID == which(strGroupID == "DL"),]$LengthPx *DIM_MMPERPX,bw=0.1)
+dSizeNF <- density(datFlatPxLength[datFlatPxLength$groupID == "NF",]$LengthPx*DIM_MMPERPX,bw=0.1)
+dSizeLF <- density(datFlatPxLength[datFlatPxLength$groupID == "LF",]$LengthPx*DIM_MMPERPX,bw=0.1)
+dSizeDF <- density(datFlatPxLength[datFlatPxLength$groupID == "DF",]$LengthPx *DIM_MMPERPX,bw=0.1)
 
 
 
@@ -65,22 +65,22 @@ XLIM <- c(3.5,5)
 YLIM <- c(0,5)
 pdistBW <- 2 ## mm/sec
 strKern <- "gaussian"
-ntail <- 20 #nrow(draw$mu[which(strGroupID == "NL"),,])*0.5
+ntail <- 20 #nrow(draw$mu[which(strGroupID == "NF"),,])*0.5
 norm <- max(dSizeNF$y)
 
 ##T- Test Between NF and LF Larvae Shows Significance 
-t.test(datFlatPxLength[datFlatPxLength$groupID == which(strGroupID == "NL"),]$LengthPx*DIM_MMPERPX,
-       datFlatPxLength[datFlatPxLength$groupID == which(strGroupID == "LL"),]$LengthPx*DIM_MMPERPX)
+t.test(datFlatPxLength[datFlatPxLength$groupID == "NF",]$LengthPx*DIM_MMPERPX,
+       datFlatPxLength[datFlatPxLength$groupID == "LF",]$LengthPx*DIM_MMPERPX)
 
 ##T- Test Between DF and LF Larvae Shows Significance 
-t.test(datFlatPxLength[datFlatPxLength$groupID == which(strGroupID == "DL"),]$LengthPx*DIM_MMPERPX,
-       datFlatPxLength[datFlatPxLength$groupID == which(strGroupID == "LL"),]$LengthPx*DIM_MMPERPX)
+t.test(datFlatPxLength[datFlatPxLength$groupID == "DF",]$LengthPx*DIM_MMPERPX,
+       datFlatPxLength[datFlatPxLength$groupID == "LF",]$LengthPx*DIM_MMPERPX)
 
 
 #######PLOT RESULTS
 ## FIGURE CONTROL FOR LARVAL SIZE
 #### PLOT Fitted Larva Length  ###
-pdf(file= paste(strPlotExportPath,"/stat/stat_LarvalLengthsGaussian.pdf" ,sep=""),width = 14,height = 3.5)
+pdf(file= paste(strPlotExportPath,"/stat/stat_LarvaLFengthsGaussian.pdf" ,sep=""),width = 14,height = 3.5)
   
   layout(matrix(c(1,2,3,4),1,4, byrow = TRUE))
   ##Margin: (Bottom,Left,Top,Right )
@@ -99,8 +99,8 @@ pdf(file= paste(strPlotExportPath,"/stat/stat_LarvalLengthsGaussian.pdf" ,sep=""
   for (i in 1:(ntail-1) )
   {
     lines(xquant,
-         dnorm(xquant,mean=tail(draw$mu[which(strGroupID == "NL"),ntail-i,],1),
-                                  sd=tail(draw$sigma[which(strGroupID == "NL"),ntail-i,],1))
+         dnorm(xquant,mean=tail(draw$mu[which(strGroupID == "NF"),ntail-i,],1),
+                                  sd=tail(draw$sigma[which(strGroupID == "NF"),ntail-i,],1))
          ,type='l', col=colourLegL[1],lwd=1,lty=1)
   }
   lines(dSizeNF,col="black",lwd=4,lty=2)
@@ -118,8 +118,8 @@ pdf(file= paste(strPlotExportPath,"/stat/stat_LarvalLengthsGaussian.pdf" ,sep=""
   for (i in 1:(ntail-1) )
   {
     lines(xquant,
-          dnorm(xquant,mean=tail(draw$mu[which(strGroupID == "LL"),ntail-i,],1),
-                sd=tail(draw$sigma[which(strGroupID == "LL"),ntail-i,],1)),
+          dnorm(xquant,mean=tail(draw$mu[which(strGroupID == "LF"),ntail-i,],1),
+                sd=tail(draw$sigma[which(strGroupID == "LF"),ntail-i,],1)),
           type='l', col=colourLegL[2],lwd=1,lty=1)
   }
   lines(dSizeLF,col="black" , xlim=XLIM,ylim=YLIM ,lwd=4 ,type='l',xlab=NA,ylab=NA,lty=2 )
@@ -137,8 +137,8 @@ pdf(file= paste(strPlotExportPath,"/stat/stat_LarvalLengthsGaussian.pdf" ,sep=""
   for (i in 1:(ntail-1) )
   {
     lines(xquant,
-          dnorm(xquant,mean=tail(draw$mu[which(strGroupID == "DL"),ntail-i,],1),
-                sd=tail(draw$sigma[which(strGroupID == "DL"),ntail-i,],1))
+          dnorm(xquant,mean=tail(draw$mu[which(strGroupID == "DF"),ntail-i,],1),
+                sd=tail(draw$sigma[which(strGroupID == "DF"),ntail-i,],1))
           ,type='l',col=colourLegL[3],lwd=1,lty=1)
   }
   lines(dSizeDF,col="black",xlim=XLIM,lwd=4,lty=2)
