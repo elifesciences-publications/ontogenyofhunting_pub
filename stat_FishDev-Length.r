@@ -24,7 +24,7 @@ modelNorm="model {
 
 ################### LOAD CSV OF PX Larva lengths ################
 message(paste(" Loading Measured fish length in pixels data ... "))
-datFlatPxLength <- read.csv(file= paste0("dat/FishSTDFengths_ALFGroups.csv"))
+datFlatPxLength <- read.csv(file= paste0("dat/FishSTDLengths_AllGroups.csv"))
 
 
 strGroupID = levels(datFlatPxLength$groupID)
