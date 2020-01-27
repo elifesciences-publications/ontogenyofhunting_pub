@@ -44,6 +44,7 @@ datHuntLabelledEventsSB <- readRDS(file=paste0("dat/datHuntLabelledEvents.rds"))
 datHuntLabelledEventsSB_evoked <-  datHuntLabelledEventsSB[datHuntLabelledEventsSB$groupID %in% c("LL","DL","NL"),]
 datFishSuccessRate <- getHuntSuccessPerFish(datHuntLabelledEventsSB_evoked)
 
+#write.csv(datFishSuccessRate,file="dat/datHuntEfficiencyPerLarva_AllGroups.csv")
 tblResSB <- table(convertToScoreLabel(datHuntLabelledEventsSB_evoked$huntScore),datHuntLabelledEventsSB_evoked$groupID)
 
 datFishSuccessRate$groupID <- factor(datFishSuccessRate$groupID)
